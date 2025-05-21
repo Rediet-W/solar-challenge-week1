@@ -22,6 +22,24 @@ countries = st.sidebar.multiselect(
     options=df["Country"].unique(),
     default=df["Country"].unique()
 )
+filtered = df[df["Country"].isin(countries)]
+# Sidebar: date range
+min_date = df["Timestamp"].min().date()
+max_date = df["Timestamp"].max().date()
+
+start, end = st.sidebar.date_input(
+    "Date range",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
+)
+
+# Filter by timestamp
+filtered = filtered[
+    (filtered["Timestamp"].dt.date >= start) &
+    (filtered["Timestamp"].dt.date <= end)
+]
+
 
 # Filter data
 filtered = df[df["Country"].isin(countries)]
@@ -37,6 +55,24 @@ ax.set_title("GHI by Country")
 ax.set_ylabel("GHI (W/m²)")
 plt.suptitle("")  # remove the automatic title
 st.pyplot(fig)
+
+# Monthly average GHI line chart
+st.subheader("Monthly Avg GHI Over Time")
+monthly = (
+    filtered
+    .set_index("Timestamp")
+    ["GHI"]
+    .resample("M")
+    .mean()
+)
+
+fig2, ax2 = plt.subplots(figsize=(8, 3))
+ax2.plot(monthly.index, monthly.values, marker="o")
+ax2.set_xlabel("Month")
+ax2.set_ylabel("Avg GHI (W/m²)")
+ax2.set_title("")
+plt.tight_layout()
+st.pyplot(fig2)
 
 # 2) Ranking table: avg GHI
 st.subheader("Average GHI Ranking")
